@@ -215,6 +215,9 @@ the configuration (without a prefix: ``Auto``).
   If ``true``, analyze the formatted file for the most common
   alignment of & and \*. ``PointerAlignment`` is then used only as fallback.
 
+**ReflowComments** (``bool``)
+  If ``true``, clang-format will attempt to re-flow comments.
+
 **DisableFormat** (``bool``)
   Disables formatting at all.
 

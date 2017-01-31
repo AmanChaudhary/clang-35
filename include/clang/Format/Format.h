@@ -98,6 +98,9 @@ struct FormatStyle {
   /// Pointer and reference alignment style.
   PointerAlignmentStyle PointerAlignment;
 
+  /// \brief If ``true``, clang-format will attempt to re-flow comments.
+  bool ReflowComments;
+
   /// \brief If \c true, analyze the formatted file for the most common
   /// alignment of & and *. \c PointerAlignment is then used only as fallback.
   bool DerivePointerAlignment;

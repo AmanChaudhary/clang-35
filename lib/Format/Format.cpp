@@ -188,6 +188,7 @@ template <> struct MappingTraits<FormatStyle> {
     IO.mapOptional("ConstructorInitializerAllOnOneLineOrOnePerLine",
                    Style.ConstructorInitializerAllOnOneLineOrOnePerLine);
     IO.mapOptional("DerivePointerAlignment", Style.DerivePointerAlignment);
+	IO.mapOptional("ReflowComments", Style.ReflowComments);
     IO.mapOptional("ExperimentalAutoDetectBinPacking",
                    Style.ExperimentalAutoDetectBinPacking);
     IO.mapOptional("IndentCaseLabels", Style.IndentCaseLabels);
@@ -325,6 +326,7 @@ FormatStyle getLLVMStyle() {
   LLVMStyle.ContinuationIndentWidth = 4;
   LLVMStyle.Cpp11BracedListStyle = true;
   LLVMStyle.DerivePointerAlignment = false;
+  LLVMStyle.ReflowComments = true;
   LLVMStyle.ExperimentalAutoDetectBinPacking = false;
   LLVMStyle.ForEachMacros.push_back("foreach");
   LLVMStyle.ForEachMacros.push_back("Q_FOREACH");
@@ -1267,7 +1269,7 @@ class FormatTokenLexer {
 public:
   FormatTokenLexer(Lexer &Lex, SourceManager &SourceMgr, FormatStyle &Style,
                    encoding::Encoding Encoding)
-      : FormatTok(nullptr), IsFirstToken(true), GreaterStashed(false),
+      : FormatTok(nullptr), IsFirstToken(true), FormattingDisabled(false), GreaterStashed(false),
         Column(0), TrailingWhitespace(0), Lex(Lex), SourceMgr(SourceMgr),
         Style(Style), IdentTable(getFormattingLangOpts()), Encoding(Encoding),
         FirstInLineIndex(0) {
@@ -1630,6 +1632,7 @@ private:
 
   FormatToken *FormatTok;
   bool IsFirstToken;
+  bool FormattingDisabled;
   bool GreaterStashed;
   unsigned Column;
   unsigned TrailingWhitespace;
@@ -1659,6 +1662,25 @@ private:
         Tok.Tok.setKind(tok::char_constant);
       }
     }
+
+	if (Tok.is(tok::comment) && 
+			(Tok.TokenText == "// clang-format on" || 
+			 Tok.TokenText == "// clang-format-tmp on " ||
+			 Tok.TokenText == "/* clang-format on */" ||
+			 Tok.TokenText == "/* clang-format-tmp on */")) {
+		FormattingDisabled = false;
+	}
+
+	Tok.Finalized = FormattingDisabled;
+
+	if (Tok.is(tok::comment) && 
+			(Tok.TokenText == "// clang-format off" ||
+			 Tok.TokenText == "// clang-format-tmp off " ||
+			 Tok.TokenText == "/* clang-format off */" ||
+			 Tok.TokenText == "/* clang-format-tmp off */")) {
+		FormattingDisabled = true;
+	}
+
   }
 };
 

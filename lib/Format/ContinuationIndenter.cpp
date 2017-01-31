@@ -901,6 +901,10 @@ void ContinuationIndenter::moveStateToNewBlock(LineState &State) {
 
 unsigned ContinuationIndenter::addMultilineToken(const FormatToken &Current,
                                                  LineState &State) {
+
+  if (!Current.IsMultiline)
+  	return 0;
+
   // Break before further function parameters on all levels.
   for (unsigned i = 0, e = State.Stack.size(); i != e; ++i)
     State.Stack[i].BreakBeforeParameter = true;
@@ -991,16 +995,18 @@ unsigned ContinuationIndenter::breakProtrudingToken(const FormatToken &Current,
     } else {
       return 0;
     }
-  } else if (Current.Type == TT_BlockComment && Current.isTrailingComment()) {
-    if (CommentPragmasRegex.match(Current.TokenText.substr(2)))
-      return 0;
+  } else if ((Current.Type == TT_BlockComment)) {
+	if (!Current.isTrailingComment()|| !Style.ReflowComments ||
+		CommentPragmasRegex.match(Current.TokenText.substr(2)))
+      return addMultilineToken(Current, State);
     Token.reset(new BreakableBlockComment(
         Current, State.Line->Level, StartColumn, Current.OriginalColumn,
         !Current.Previous, State.Line->InPPDirective, Encoding, Style));
   } else if (Current.Type == TT_LineComment &&
              (Current.Previous == nullptr ||
               Current.Previous->Type != TT_ImplicitStringLiteral)) {
-    if (CommentPragmasRegex.match(Current.TokenText.substr(2)))
+    if (!Style.ReflowComments || 
+		CommentPragmasRegex.match(Current.TokenText.substr(2)))
       return 0;
     Token.reset(new BreakableLineComment(Current, State.Line->Level,
                                          StartColumn, /*InPPDirective=*/false,
